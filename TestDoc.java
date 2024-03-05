@@ -1,3 +1,6 @@
 public class TestDoc {
-    //this is a test
+    //Hello World test
+    public static void main(String[] args) {
+        System.out.println("Hello, World!");
+    }
 }
