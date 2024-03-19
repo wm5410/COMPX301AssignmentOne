@@ -3,7 +3,9 @@
 //Justin Poutoa  - 1620107
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 
 /**
@@ -13,7 +15,7 @@ public class makeRuns {
     /**
      * This class is for:
      * 1. Sorting a large dataset into chunks 
-     * 2. Sorting each chunk via Quickksort
+     * 2. Sorting each chunk via Heap Sort
      * 3. Output the sorted runs to files
      * @param args
      */
@@ -54,6 +56,8 @@ public class makeRuns {
         int count = 0;
         // Counter to keep track of the total number of runs created
         int runCount = 0;
+        //Declare a writer
+        BufferedWriter writer = null;
         try{
             String line;
             while((line = reader.readLine()) != null){
@@ -63,10 +67,15 @@ public class makeRuns {
                 if(count == m){
                     //Sort the array
                     heapSort(lines);
+                    //Initialise the writer
+                    writer = new BufferedWriter(new FileWriter("run_" + runCount + ".tmp"));
                     //Print the stored lines to output
                     for(String sortedLine : lines){
-                        System.out.println(sortedLine);
+                        writer.write(sortedLine);
+                        writer.newLine();
                     }
+                    //Ensures the data has been written to a file
+                    writer.flush();
                     //Reset counter for the next run
                     count = 0;
                     //Increment the total run count
@@ -78,6 +87,10 @@ public class makeRuns {
         }
         //Close the Buffer reader
         reader.close();
+        //Close the writer if it is NOT empty
+        if(writer != null){
+            writer.close();
+        }
     }
 
     /**
@@ -104,49 +117,50 @@ public class makeRuns {
 
     /**
      * Heapify a subtree  with node 'i' which is an index in 'arr[]'
-     * @param arr is the array
-     * @param N an integer
-     * @param i another integer
+     * @param arr is the array to be heapified
+     * @param N the size of the heap
+     * @param i the index of the root of the subtree to be heapified
      */
     static void heapify(String arr[], int N, int i){
         int largest = i;
-        int l = 2 * i + 1;
-        int r = 2 * i + 2;
-
-        if(l < N && arr[l].compareTo(arr[largest]) > 0){
-            largest = l;
+        int left = 2 * i + 1;
+        int right = 2 * i + 2;
+        //If the left child is larger than root
+        if(left < N && arr[left].compareTo(arr[largest]) > 0){
+            //Make it the largest
+            largest = left;
         }
-
-        if(r < N && arr[r].compareTo(arr[largest]) > 0){
-            largest = r;
+        //If the right child is larger than the LARGEST so far
+        if(right < N && arr[right].compareTo(arr[largest]) > 0){
+            //Make it the largest
+            largest = right;
         }
-
+        //If largest is NOT root
         if(largest != i){
             String swap = arr[i];
             arr[i] = arr[largest];
             arr[largest] = swap;
-
+            //Recursively heapify the affected sub tree
+            //note: Tony said to try and avoid using recursive so think of a better alternative
             heapify(arr, N, largest);
         }
     }
 
     /**
      * Method to perform heap sort on a part of the array 
-     * @param arr the array
-     * @param N an integer
+     * @param arr the array to be sorted
+     * @param N the number of elements to be sorted
      */
     static void heapSort(String arr[], int N) {
         // Build heap (rearrange array)
         for (int i = N / 2 - 1; i >= 0; i--)
             heapify(arr, N, i);
-
         // One by one extract an element from heap
         for (int i = N - 1; i > 0; i--) {
             // Move current root to end
             String temp = arr[0];
             arr[0] = arr[i];
             arr[i] = temp;
-
             // call max heapify on the reduced heap
             heapify(arr, i, 0);
         }
@@ -154,11 +168,10 @@ public class makeRuns {
 
     /**
      * Method to print an array of strings
-     * @param arr
+     * @param arr the array to be printed
      */
     static void printArray(String arr[]) {
         int N = arr.length;
-
         for (int i = 0; i < N; ++i)
             System.out.print(arr[i] + " ");
         System.out.println();
