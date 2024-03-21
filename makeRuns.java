@@ -6,7 +6,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class MakeRunsTest {
+public class makeRuns {
     public static void main(String[] args) {
         if (args.length != 2) {
             System.err.println("Error: Incorrect Parameters");
