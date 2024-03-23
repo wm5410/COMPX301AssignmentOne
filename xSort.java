@@ -8,9 +8,9 @@ public class xSort {
         }
 
         try {
-            int m = Integer.parseInt(args[0]); // Number of lines in each initial run
+            //int m = Integer.parseInt(args[0]); // Number of lines in each initial run
             //String initialRunsFile = args[1]; // File with initial runs
-            int k = Integer.parseInt(args[2]); // Number of runs merged on each pass
+            //int k = Integer.parseInt(args[2]); // Number of runs merged on each pass
             //distributeRuns(initialRunsFile, m, k);
             String[] tmpFiles = getTmpFiles();
             mergeRuns(tmpFiles,"output.txt");
@@ -101,12 +101,57 @@ public class xSort {
         return tempFiles;
     }
 
-    public static void mergeRuns(String[] tempFiles, String outputFile){
+    public static void mergeRuns(String[] tempFiles, String outputFile) throws IOException{
         // Perform k-way sort merge iteratively until one final sorted run is produced
         // Use a priority queue for merging the runs
         // Print the final sorted data to the standard output
 
-        
+        //Initialised a bufferedWriter to write the data in the outputFile
+        try(BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))){
+            // Initialize a priority queue to manage merging of runs
+            PriorityQueue<RunEntry> pq = new PriorityQueue<>(Comparator.comparingInt(o -> o.value));
+            
+            // Initialize a buffered reader for each temporary file
+            BufferedReader[] readers = new BufferedReader[tempFiles.length];
+            for (int i = 0; i < tempFiles.length; i++) {
+                readers[i] = new BufferedReader(new FileReader(tempFiles[i]));
+                // Read the first line of each file and add it to the priority queue
+                String line = readers[i].readLine();
+                if (line != null) {
+                    int value = Integer.parseInt(line);
+                    pq.offer(new RunEntry(value, i));
+                }
+            }
+
+            // Merge runs until the priority queue is empty
+            while (!pq.isEmpty()) {
+                // Get the smallest value from the priority queue
+                RunEntry entry = pq.poll();
+                // Write the value to the output file
+                writer.write(String.valueOf(entry.value));
+                writer.newLine();
+
+                // Read the next line from the corresponding file and add it to the priority queue
+                String line = readers[entry.fileIndex].readLine();
+                if (line != null) {
+                    int value = Integer.parseInt(line);
+                    pq.offer(new RunEntry(value, entry.fileIndex));
+                }
+            }
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    // Nested class to represent an entry in the priority queue
+    static class RunEntry {
+        int value; // Value of the entry
+        int fileIndex; // Index of the file containing the entry
+
+        public RunEntry(int value, int fileIndex) {
+            this.value = value;
+            this.fileIndex = fileIndex;
+        }
     }
 
     /**
@@ -133,10 +178,10 @@ public class xSort {
         while(tapes.size() > 1){
             List<List<Integer>> newTapes = new ArrayList<>();
             for(int i = 0; i < tapes.size(); i+=2){
-                List<Integer> firstTape = tapes.get(i);
-                List<Integer> secondTape = (i + 1 < tapes.size()) ? tapes.get(i + 1) : new ArrayList<>();
+                //List<Integer> firstTape = tapes.get(i);
+                //List<Integer> secondTape = (i + 1 < tapes.size()) ? tapes.get(i + 1) : new ArrayList<>();
                 //OVER HERE - merge two tapes into one
-                newTapes.add(merge(firstTape, secondTape));
+                //newTapes.add(merge(firstTape, secondTape));
             }
             tapes = newTapes;
         }
