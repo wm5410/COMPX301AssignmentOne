@@ -1,8 +1,5 @@
 import java.io.*;
 import java.util.*;
-
-//need Priority queue 
-
 public class xSort {
     public static void main(String[] args) {
         if (args.length != 3) {
@@ -14,8 +11,11 @@ public class xSort {
             int m = Integer.parseInt(args[0]); // Number of lines in each initial run
             String initialRunsFile = args[1]; // File with initial runs
             int k = Integer.parseInt(args[2]); // Number of runs merged on each pass
-            distributeRuns(initialRunsFile, m, k);
-            mergeRuns(initialRunsFile, m, k);
+            //distributeRuns(initialRunsFile, m, k);
+            String[] tmpFiles = getTmpFiles();
+            mergeRuns(tmpFiles,"output.txt");
+
+
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
         }
@@ -32,7 +32,7 @@ public class xSort {
 
         // Initialize temp file names
         for (int i = 0; i < NUM_FILES; i++) {
-            TEMP_FILES[i] = "temp" + (i + 1) + ".txt";
+            TEMP_FILES[i] = "k" + (i + 1) + ".tmp";
         }
 
         FileReader inputFileReader = null;
@@ -82,9 +82,30 @@ public class xSort {
         }
     }
 
-    public static void mergeRuns(String initialRunsFile, int m, int k){
+    public static String[] getTmpFiles(){
+        // Directory where temporary files are located
+        String directory = System.getProperty("user.dir");
+    
+        // Get list of files in the directory
+        File[] files = new File(directory).listFiles();
+            
+        // Filter out only the files with the ".tmp" extension
+        List<String> tempFileList = new ArrayList<>();
+        for (File file : files) {
+            if (file.isFile() && file.getName().endsWith(".tmp")) {
+                tempFileList.add(file.getAbsolutePath());
+            }
+        }
+        // Convert the list to an array
+        String[] tempFiles = tempFileList.toArray(new String[0]);
+        return tempFiles;
+    }
+
+    public static void mergeRuns(String[] tempFiles, String outputFile){
         // Perform k-way sort merge iteratively until one final sorted run is produced
         // Use a priority queue for merging the runs
         // Print the final sorted data to the standard output
+
+        
     }
 }
