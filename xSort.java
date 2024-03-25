@@ -7,14 +7,21 @@ public class xSort {
             System.err.println("Usage: java xSort <lines> <initial_runs_file> <merged runs>");
             System.exit(1);
         }
+        //If k is not 2, exit
+        if(Integer.parseInt(args[2]) != 2){
+            System.out.println("This program is only a 2 way merge.");
+            System.exit(0);
+        }
         //Add a try-catch for error checking
         try {
-            //int m = Integer.parseInt(args[0]); // Number of lines in each initial run
-            //String initialRunsFile = args[1]; // File with initial runs
-            //int k = Integer.parseInt(args[2]); // Number of runs merged on each pass
-            //distributeRuns(initialRunsFile, m, k);
+            int m = Integer.parseInt(args[0]); // Number of lines in each initial run
+            String initialRunsFile = args[1]; // File with initial runs
+            int k = Integer.parseInt(args[2]); // Number of runs merged on each pass
+            distributeRuns(initialRunsFile, m, k);
             String[] tmpFiles = getTmpFiles();
             mergeRuns(tmpFiles,"output.txt");
+            //Delete temp files after merging
+
         } catch (Exception e) {
             //Dysplay the error in the output
             System.out.println("Error: " + e.getMessage());
@@ -22,18 +29,17 @@ public class xSort {
     }
 
     public static void distributeRuns(String initialRunsFile, int m, int k) throws IOException{
-        // Read initial runs from inputFile and distribute them into k files
-        // Each file will contain a subset of the initial runs
-
+        // Read initial runs from inputFile and distribute them into 2 files
         //Declare variables
         int NUM_FILES = k;
         int LINES_PER_FILE = m;
         String INPUT_FILE = initialRunsFile;
         String[] TEMP_FILES = new String[NUM_FILES];
-        // Initialize temp file names
-        for (int i = 0; i < NUM_FILES; i++) {
+        // Initialize temp file names, should create 4 files
+        for (int i = 0; i <= NUM_FILES*2; i++) {
             TEMP_FILES[i] = "k" + (i + 1) + ".tmp";    //This is how the files will be named
         }
+        
 
         FileReader inputFileReader = null;
 
@@ -108,24 +114,20 @@ public class xSort {
     }
 
     public static void mergeRuns(String[] tempFiles, String outputFile){
-        // Perform k-way sort merge iteratively until one final sorted run is produced
-        // Use a priority queue for merging the runs
-        // Print the final sorted data to the standard output
-
         //Initialised a bufferedWriter to write the data in the outputFile
         try(BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))){
             // Initialize a priority queue to manage merging of runs
-            PriorityQueue<RunEntry> pq = new PriorityQueue<>(Comparator.comparingInt(o -> o.value));
+            //PriorityQueue<RunEntry> pq = new PriorityQueue<>(Comparator.comparingInt(o -> o.value));
             
             // Initialize a buffered reader for each temporary file
             BufferedReader[] readers = new BufferedReader[tempFiles.length];
             for (int i = 0; i < tempFiles.length; i++) {
                 readers[i] = new BufferedReader(new FileReader(tempFiles[i]));
-                // Read the first line of each file and add it to the priority queue
+                // Read the first line of each file
                 String line = readers[i].readLine();
                 if (line != null) {
                     int value = Integer.parseInt(line);
-                    pq.offer(new RunEntry(value, i));
+                    //pq.offer(new RunEntry(value, i));
                 }
             }
 

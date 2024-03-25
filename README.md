@@ -1,4 +1,6 @@
-This is a readme file containing the failed code for xSort.java trying to implement k-way merge sort. 
+This is a readme file containing the failed code for xSort.java trying to implement k-way merge sort.
+We attempted the k way merge but failed.
+Tony has asked to mark our submission himself. 
 Assuming 2 <= k <= 15.
 
 *************** START ********************
