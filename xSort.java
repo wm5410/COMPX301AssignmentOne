@@ -12,8 +12,9 @@ public class xSort {
             String initialRunsFile = args[1]; // File with initial runs
             int k = Integer.parseInt(args[2]); // Number of runs merged on each pass
             distributeRuns(initialRunsFile, m, k);
-            List<File> tmpFiles = getTmpFiles();
+            String[] tmpFiles = getTmpFiles();
             mergeRuns(tmpFiles,"output.txt");
+
 
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
@@ -81,45 +82,61 @@ public class xSort {
         }
     }
 
-    public static List<File> getTmpFiles() {
+    public static String[] getTmpFiles(){
         // Directory where temporary files are located
         String directory = System.getProperty("user.dir");
     
         // Get list of files in the directory
         File[] files = new File(directory).listFiles();
-    
+            
         // Filter out only the files with the ".tmp" extension
-        List<File> tempFileList = new ArrayList<>();
+        List<String> tempFileList = new ArrayList<>();
         for (File file : files) {
             if (file.isFile() && file.getName().endsWith(".tmp")) {
-                tempFileList.add(file);
+                tempFileList.add(file.getAbsolutePath());
             }
         }
-        return tempFileList;
+        // Convert the list to an array
+        String[] tempFiles = tempFileList.toArray(new String[0]);
+        return tempFiles;
     }
 
-    public static void mergeRuns(List<File> tempFiles, String outputFile) throws IOException{
+    public static void mergeRuns(String[] tempFiles, String outputFile){
         // Perform k-way sort merge iteratively until one final sorted run is produced
         // Use a priority queue for merging the runs
         // Print the final sorted data to the standard output
 
-        BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
 
-        // Iterate over each temp file
-        for (File tempFile : tempFiles) {
-            BufferedReader reader = new BufferedReader(new FileReader(tempFile));
 
-            for (int i = 0; i < 128; i++) {
-                String line = reader.readLine();
-                if (line != null && !line.isEmpty()) {
-                    writer.write(line);
-                    writer.newLine();
-                }
+        try {
+            // Open input file for reading
+            BufferedReader reader = new BufferedReader(new FileReader("k1.tmp"));
+            // Open output file for writing
+            BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
+
+            // Read and write the first 129 lines
+            String line;
+            int lineCount = 0;
+            while ((line = reader.readLine()) != null && lineCount < 129) {
+                writer.write(line + System.lineSeparator());
+                lineCount++;
             }
 
+            // Skip the 130th line (the line to delete)
+            reader.readLine();
+
+            // Close resources
             reader.close();
+            writer.close();
+
+            System.out.println("Lines processed and written successfully.");
+        } catch (IOException e) {
+            System.err.println("Error: " + e.getMessage());
         }
 
-        writer.close();
+
+
+
+        
     }
 }
