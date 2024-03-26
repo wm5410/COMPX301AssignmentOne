@@ -186,6 +186,7 @@ public class xSort {
         public void writeRuns() throws IOException {
             if (isAllRunsNotEmpty()) {
                 DoMerge();
+                
             } else {
                 for (int i = 0; i < 2; i++) {
                     if (scannersArray[i].hasNextLine()) {
