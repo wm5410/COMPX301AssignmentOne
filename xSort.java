@@ -7,67 +7,61 @@ public class xSort {
             System.err.println("Usage: java xSort <lines> <initial_runs_file> <merged runs>");
             System.exit(1);
         }
-        //If k is not 2, exit
-        if(Integer.parseInt(args[2]) != 2){
-            System.out.println("This program is only a 2 way merge.");
-            System.exit(0);
-        }
         //Add a try-catch for error checking
         try {
             int m = Integer.parseInt(args[0]); // Number of lines in each initial run
             String initialRunsFile = args[1]; // File with initial runs
             int k = Integer.parseInt(args[2]); // Number of runs merged on each pass
             distributeRuns(initialRunsFile, m, k);
-            String[] tmpFiles = getTmpFiles();
+            File[] tmpFiles = getTmpFiles();
             mergeRuns(tmpFiles,"output.txt");
-            //Delete temp files after merging
-
         } catch (Exception e) {
             //Dysplay the error in the output
             System.out.println("Error: " + e.getMessage());
         }
     }
 
+
+
+
+
+
     public static void distributeRuns(String initialRunsFile, int m, int k) throws IOException{
-        // Read initial runs from inputFile and distribute them into 2 files
-        //Declare variables
+        // Read initial runs from inputFile and distribute them into k files
+        // Each file will contain a subset of the initial runs
+
         int NUM_FILES = k;
         int LINES_PER_FILE = m;
         String INPUT_FILE = initialRunsFile;
         String[] TEMP_FILES = new String[NUM_FILES];
-        // Initialize temp file names, should create 4 files
-        for (int i = 0; i <= NUM_FILES*2; i++) {
-            TEMP_FILES[i] = "k" + (i + 1) + ".tmp";    //This is how the files will be named
+
+        // Initialize temp file names
+        for (int i = 0; i < NUM_FILES; i++) {
+            TEMP_FILES[i] = "k" + (i + 1) + ".tmp";
         }
-        
 
         FileReader inputFileReader = null;
 
         try {
-            // Open input file for reading
+            // Open input file
             inputFileReader = new FileReader(INPUT_FILE);
-            int linesWritten = 0;         //Counter for lines written to each temporary file
-            int currentFileIndex = 0;     //Index of the current temporary file being written to
-            boolean inputEnded = false;   //Flag to indicate if end of the file is reached
-            //Loop until end of file is reached
+            int linesWritten = 0;
+            int currentFileIndex = 0;
+            boolean inputEnded = false;
+
             while (!inputEnded) {
                 //Use FileWriter as BufferedWriter doesnt work 
                 try (FileWriter tempWriter = new FileWriter(TEMP_FILES[currentFileIndex], true)) {
                     int character;
-                    // Loop to write lines to the current temp file
+                    // Loop to write lines to the temp file
                     while ((character = inputFileReader.read()) != -1) {
-                        //Write character to the temp file
                         tempWriter.write(character);
                         if (character == '\n') {
-                            //Increment line counter
                             linesWritten++;
-                            //If all the lines in a single file have been read
                             if (linesWritten == LINES_PER_FILE) {
-                                //Reset counter
                                 linesWritten = 0;
-                                //Move to the next temp file
                                 currentFileIndex = (currentFileIndex + 1) % NUM_FILES;
-                                break; 
+                                break; // Move to the next temp file
                             }
                         }
                     }
@@ -75,7 +69,6 @@ public class xSort {
                     if (character == -1) {
                         inputEnded = true;
                         inputFileReader.close();
-                        //Re-open input file for reading
                         inputFileReader = new FileReader(INPUT_FILE);
                     }
                 }
@@ -94,138 +87,292 @@ public class xSort {
         }
     }
 
-    public static String[] getTmpFiles(){
+
+
+
+
+    public static File[] getTmpFiles() {
         // Directory where temporary files are located
         String directory = System.getProperty("user.dir");
     
         // Get list of files in the directory
         File[] files = new File(directory).listFiles();
-            
+    
         // Filter out only the files with the ".tmp" extension
-        List<String> tempFileList = new ArrayList<>();
+        List<File> tempFileList = new ArrayList<>();
         for (File file : files) {
             if (file.isFile() && file.getName().endsWith(".tmp")) {
-                tempFileList.add(file.getAbsolutePath());
+                tempFileList.add(file);
             }
         }
         // Convert the list to an array
-        String[] tempFiles = tempFileList.toArray(new String[0]);
+        File[] tempFiles = tempFileList.toArray(new File[tempFileList.size()]);
         return tempFiles;
     }
 
-    public static void mergeRuns(String[] tempFiles, String outputFile){
-        //Initialised a bufferedWriter to write the data in the outputFile
-        try(BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))){
-            // Initialize a priority queue to manage merging of runs
-            //PriorityQueue<RunEntry> pq = new PriorityQueue<>(Comparator.comparingInt(o -> o.value));
-            
-            // Initialize a buffered reader for each temporary file
-            BufferedReader[] readers = new BufferedReader[tempFiles.length];
-            for (int i = 0; i < tempFiles.length; i++) {
-                readers[i] = new BufferedReader(new FileReader(tempFiles[i]));
-                // Read the first line of each file
-                String line = readers[i].readLine();
-                if (line != null) {
-                    int value = Integer.parseInt(line);
-                    //pq.offer(new RunEntry(value, i));
+
+
+
+
+    public static void mergeRuns(File[] tempFiles, String outputFile) throws IOException{
+        // Perform k-way sort merge iteratively until one final sorted run is produced
+        // Use a priority queue for merging the runs
+        // Print the final sorted data to the standard output
+
+            boolean isMergeFinished = false;
+            boolean isMergeStart = true;
+            int runSize = 128;
+            int numOfRunsToMerge = 2;
+
+            // Keep merging until the merge process is complete
+            while (isMergeFinished == false) {
+                // If at the very start of merges, don't increase runSize
+                // After every merge, increase runSize by 2 times (number of runs being merged at once)
+                if (isMergeStart == true) {
+                    isMergeStart = false;
+                } else {
+                    //Only start increasing run size after first merge
+                    runSize = runSize * numOfRunsToMerge;
+                }
+
+                Merge merge = new Merge(numOfRunsToMerge, runSize, tempFiles);
+                merge.writeRuns();
+                if (merge.isAtEndOfMerge() == true) {
+                    // If at end of merge, output content to sorted.txt
+                    writeFinalOutput("output.txt");
+                    isMergeFinished = true;
+                    System.out.print("bye");
                 }
             }
+    }
 
-            // Merge runs until the priority queue is empty
-            while (!pq.isEmpty()) {
-                // Get the smallest value from the priority queue
-                RunEntry entry = pq.poll();
-                // Write the value to the output file
-                writer.write(String.valueOf(entry.value));
+
+
+
+
+
+    public static class Merge{
+
+        private int runSize;
+        private File[] files;
+        private int[] fileLineCountArray;
+        private String[] topOfRunsArray;
+        private Scanner[] scannersArray;
+        private BufferedWriter[] writerArray;
+        private BufferedWriter currentWriter;
+
+        public Merge(int numOfRunsToMerge, int runSize, File[] tempFiles) {
+            try {
+                this.files = tempFiles;
+                this.runSize = runSize;
+                fileLineCountArray = new int[numOfRunsToMerge];
+                topOfRunsArray = new String[numOfRunsToMerge];
+                scannersArray = new Scanner[numOfRunsToMerge];
+                writerArray = new BufferedWriter[numOfRunsToMerge];
+                Arrays.fill(fileLineCountArray, 0);
+                //Populate both arrays with 0 and 1 index
+                for (int i = 0; i < numOfRunsToMerge; i++) {
+                    scannersArray[i] = new Scanner(files[i]);
+                    File outputFile = File.createTempFile("output", ".tmp");
+                    writerArray[i] = new BufferedWriter(new FileWriter(outputFile));
+                }
+                currentWriter = writerArray[0];
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+
+        public void writeRuns() throws IOException {
+            if (isAllRunsNotEmpty()) {
+                DoMerge();
+            } else {
+                for (int i = 0; i < 2; i++) {
+                    if (scannersArray[i].hasNextLine()) {
+                        currentWriter.write(topOfRunsArray[i]);
+                        currentWriter.newLine();
+                        fileLineCountArray[i]++;
+                        writeRestOfRun(i);
+                    }
+                    writerArray[i].close();
+                }
+            }
+        }
+
+        
+
+        private void DoMerge() {
+            try {
+                while (!isEndOfAllRuns()) {
+                    if (isTopOfRunsEmpty()) {
+                        initialiseTopOfRuns();
+                    }
+                    String smallestValueToWrite = compareSmallest();
+                    int smallestValueFromFileCounter = compareSmallestCount();
+                    currentWriter.write(smallestValueToWrite);
+                    currentWriter.newLine();
+                    fileLineCountArray[smallestValueFromFileCounter]++;
+                    if (isEndOfRun(fileLineCountArray[smallestValueFromFileCounter], scannersArray[smallestValueFromFileCounter])) {
+                        int otherFileCount = 1 - smallestValueFromFileCounter;
+                        currentWriter.write(topOfRunsArray[otherFileCount]);
+                        currentWriter.newLine();
+                        fileLineCountArray[otherFileCount]++;
+                        writeRestOfRun(otherFileCount);
+                        currentWriter = writerArray[0];
+                        Arrays.fill(topOfRunsArray, null);
+                        writeRuns();
+                    } else {
+                        topOfRunsArray[smallestValueFromFileCounter] = scannersArray[smallestValueFromFileCounter].nextLine();
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private boolean isEndOfRun(int fileLineCount, Scanner scanner) {
+            return !scanner.hasNextLine() || (fileLineCount % runSize == 0 && fileLineCount != 0);
+        }
+
+        private boolean isAllRunsNotEmpty() {
+            // Check if the first two scanners have lines left to read
+            for (int i = 0; i < Math.min(scannersArray.length, 2); i++) {
+                if (!scannersArray[i].hasNextLine()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private boolean isEndOfAllRuns(){
+            // If any files still have lines left, there are runs left, return false
+            for(int i = 0; i < scannersArray.length; i++){
+                if(scannersArray[i].hasNextLine()){
+                    return false;
+                }
+            }
+            return true;
+        }
+
+              /*
+         * Checks to see if topOfRunsArray is null
+         * Return true if any value in topOfRunsArray is null. Otherwise false
+         */
+        private boolean isTopOfRunsEmpty(){
+            boolean isEmpty = false;
+            for(int i = 0; i < topOfRunsArray.length; i++){
+                if(topOfRunsArray[i] == null){
+                    isEmpty = true;
+                }
+            }
+            return isEmpty;
+        }
+    
+        /*
+         * For every value in topOfRunsArray, make it the next line of its respective file
+         */
+        private void initialiseTopOfRuns(){
+            for(int i = 0; i < topOfRunsArray.length; i++){
+                if(scannersArray[i].hasNextLine()){
+                    topOfRunsArray[i] = scannersArray[i].nextLine();
+                }
+            }
+        }
+    
+        /*
+         * Takes in an array of two and returns the smaller value out of the two
+         */
+        private String compareSmallest(){
+            String one = topOfRunsArray[0];
+            String two = topOfRunsArray[1];
+            String smallestValue;
+            int result = one.compareTo(two);
+            if(result > 0){
+                smallestValue = two;
+            }
+            else{
+                smallestValue = one;
+            }
+            return smallestValue;
+        }
+    
+        /*
+         * Takes in an array of two, returns the index of where the smaller value came from
+         */
+        private int compareSmallestCount(){
+            String one = topOfRunsArray[0];
+            String two = topOfRunsArray[1];
+            int smallestValueCount;
+            int result = one.compareTo(two);
+            if(result > 0){
+                smallestValueCount = 1;
+            }
+            else{
+                smallestValueCount = 0;
+            }
+            return smallestValueCount;
+        }
+
+        /*
+         * Writes out the rest of the run
+         * fileCount is the count of the file currently reading
+         */
+        private void writeRestOfRun(int fileCount){
+            try{
+                while(isEndOfRun(fileLineCountArray[fileCount], scannersArray[fileCount]) == false){
+                    // Update top of run
+                    topOfRunsArray[fileCount] = scannersArray[fileCount].nextLine();
+                    // Get top of run, write it out to specified file
+                    currentWriter.write(topOfRunsArray[fileCount]);
+                    currentWriter.newLine();
+                    //System.out.println(topOfRunsArray[fileCount]);
+                    fileLineCountArray[fileCount]++;
+                }
+            } catch (IOException e) {
+                System.out.println("An error occurred.");
+                e.printStackTrace();
+            }
+        }
+
+        public boolean isAtEndOfMerge() {
+            // Iterate through the scannersArray
+            for (Scanner scanner : scannersArray) {
+                // If any scanner has more lines to read, return false
+                if (scanner.hasNextLine()) {
+                    return false;
+                }
+            }
+            // If all scanners have reached the end of their files, return true
+            return true;
+        }
+
+    }
+
+    private static void writeFinalOutput(String finalSortedFileName) {
+        try {
+            // Write everything from file2 to final output file
+            String line;
+            File file2 = new File("k2.tmp");
+            Scanner scanner = new Scanner(file2);
+            File sortedFile = new File(finalSortedFileName);
+            sortedFile.createNewFile();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(sortedFile));
+            while (scanner.hasNextLine()) {
+                line = scanner.nextLine();
+                writer.write(line);
                 writer.newLine();
-
-                // Read the next line from the corresponding file and add it to the priority queue
-                String line = readers[entry.fileIndex].readLine();
-                if (line != null) {
-                    int value = Integer.parseInt(line);
-                    pq.offer(new RunEntry(value, entry.fileIndex));
-                }
             }
-        } catch(IOException e){
+            scanner.close();
+            writer.close();
+        } catch (IOException e) {
+            System.out.println("An error occurred.");
             e.printStackTrace();
         }
     }
 
-    // Nested class to represent an entry in the priority queue
-    static class RunEntry {
-        int value; // Value of the entry
-        int fileIndex; // Index of the file containing the entry
 
-        public RunEntry(int value, int fileIndex) {
-            this.value = value;
-            this.fileIndex = fileIndex;
-        }
-    }
 
-    /**
-     * Performs balanced k way merge sort on the initial runs
-     * @param initialRuns list of initial runs
-     * @param numTapes number of tapes (runs sorted on each pass)
-     * @return 
-     */
-    public static List<Integer> balancedMergeSort(List<List<Integer>> initialRuns, int numTapes){
-        //Initialise tapes to hold the initial runs
-        List<List<Integer>> tapes = new ArrayList<>();
-        for(int i = 0; i < numTapes; i++){
-            tapes.add(new ArrayList<>());
-        }
-        //Distribute initial runs among tapes
-        for(List<Integer> run : initialRuns){
-            tapes.get(0).addAll(run);
-        }
-        //Sort each tape individually
-        for(List<Integer> tape : tapes){
-            Collections.sort(tape);
-        }
-        //Merge pairs of tapes until only one tape remains
-        while(tapes.size() > 1){
-            List<List<Integer>> newTapes = new ArrayList<>();
-            for(int i = 0; i < tapes.size(); i+=2){
-                //List<Integer> firstTape = tapes.get(i);
-                //List<Integer> secondTape = (i + 1 < tapes.size()) ? tapes.get(i + 1) : new ArrayList<>();
-                //OVER HERE - merge two tapes into one
-                //newTapes.add(merge(firstTape, secondTape));
-            }
-            tapes = newTapes;
-        }
-        return tapes.get(0);
-    }
 
-    /**
-     * Merges two sorted tapes/lists into a single sorted list
-     * @param firstTape first sorted list
-     * @param secondTape second sorted list
-     * @return
-     */
-    public static List<Integer> merge(List<Integer> firstTape, List<Integer> secondTape){
-        //Create a new array list to store tapes which were merged
-        List<Integer> mergedData = new ArrayList<>();
-        //Declare variables to zero (to get first element in the array)
-        int i = 0, j = 0;
-        //Iterate through both tapes and compare
-        while (i < firstTape.size() && j < secondTape.size()) {
-            //If the first run in the firstTape is less than the first run in the secondTape
-            if (firstTape.get(i) < secondTape.get(j)) {
-                //Add the run in the secondTape to mergedData and move to the next run
-                mergedData.add(secondTape.get(i++));
-            } else {
-                //Add the run in the firstTape to mergedData and move to the next run
-                mergedData.add(secondTape.get(j++));
-            }
-        }
-        //Add remaining runs in the firstTape to mergedData
-        while (i < firstTape.size()) {
-            mergedData.add(firstTape.get(i++));
-        }
-        //Add remaining runs in the secondTape to mergedData
-        while (j < secondTape.size()) {
-            mergedData.add(secondTape.get(j++));
-        }
-        return mergedData;
-    }
+
+
 }
